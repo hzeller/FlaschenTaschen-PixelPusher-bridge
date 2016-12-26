@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#include <stdio.h>
 
 // Either with hostname or IP address. Assuming port 5078.
 static int OpenPPSocket(const char *host) {
