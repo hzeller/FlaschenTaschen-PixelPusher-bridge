@@ -84,8 +84,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    fprintf(stderr, "Starting FlaschenTaschen server, sending result to "
-            "PixelPusher installation\nDisplay size = %dx%d\n",
+    fprintf(stderr, "Sending result to %dx%d PixelPusher installation\n",
             display->width(), display->height());
 
     // Commandline parsed, immediate errors reported. Time to become daemon.
