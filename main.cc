@@ -33,37 +33,6 @@
 #include "led-flaschen-taschen.h"
 #include "ft-server.h"
 
-#define DROP_PRIV_USER "daemon"
-#define DROP_PRIV_GROUP "daemon"
-
-bool drop_privs(const char *priv_user, const char *priv_group) {
-    uid_t ruid, euid, suid;
-    if (getresuid(&ruid, &euid, &suid) >= 0) {
-        if (euid != 0)   // not root anyway. No priv dropping.
-            return true;
-    }
-
-    struct group *g = getgrnam(priv_group);
-    if (g == NULL) {
-        perror("group lookup.");
-        return false;
-    }
-    if (setresgid(g->gr_gid, g->gr_gid, g->gr_gid) != 0) {
-        perror("setresgid()");
-        return false;
-    }
-    struct passwd *p = getpwnam(priv_user);
-    if (p == NULL) {
-        perror("user lookup.");
-        return false;
-    }
-    if (setresuid(p->pw_uid, p->pw_uid, p->pw_uid) != 0) {
-        perror("setresuid()");
-        return false;
-    }
-    return true;
-}
-
 static int usage(const char *progname) {
     fprintf(stderr, "usage: %s [options]\n", progname);
     fprintf(stderr, "Options:\n"
@@ -132,12 +101,6 @@ int main(int argc, char *argv[]) {
     // be used by the UDP server.
     CompositeFlaschenTaschen layered_display(display, 16);
     layered_display.StartLayerGarbageCollection(&mutex, layer_timeout);
-
-    // After hardware is set up, all servers are listening and all
-    // threads are started with their respective priorities, we can drop
-    // privileges.
-    if (!drop_privs(DROP_PRIV_USER, DROP_PRIV_GROUP))
-        return 1;
 
     udp_server_run_blocking(&layered_display, &mutex);  // last server blocks.
     delete display;
