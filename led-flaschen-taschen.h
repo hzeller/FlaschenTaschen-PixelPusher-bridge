@@ -56,7 +56,7 @@ private:
 
 class BJKPixelPusher : public FlaschenTaschen {
 public:
-    BJKPixelPusher();
+    BJKPixelPusher(int udp_packet_size);
     virtual ~BJKPixelPusher();
 
     virtual int width() const;

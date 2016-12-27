@@ -33,39 +33,48 @@
 #include "led-flaschen-taschen.h"
 #include "ft-server.h"
 
+// Max packet size can be up to 64k with UDP, however, the physical pixel
+// pusher has some limit much lower than that due to lower memory.
+// Not sure what it is, might be worthwhile to increase until it stops working.
+static const int kDefaultPacketSize = 1460;
+
+static const int kMaxUDPPacketSize = 65507;  // largest practical w/ IPv4 header
+
 static int usage(const char *progname) {
     fprintf(stderr, "usage: %s [options]\n", progname);
     fprintf(stderr, "Options:\n"
+            "\t-u <udp-size>        : Maximum UDP to PixelPusher. Default %d.\n"
             "\t-d                   : Become daemon\n"
-            "\t--layer-timeout <sec>: Layer timeout: clearing after non-activity (Default: 15)\n"
-            );
+            "\t--layer-timeout <sec>: Layer timeout: clearing after non-activity (Default: 15)\n", kDefaultPacketSize);
     return 1;
 }
 
 int main(int argc, char *argv[]) {
     int layer_timeout = 15;
     bool as_daemon = false;
+    int udp_packet_size = kDefaultPacketSize;
 
     enum LongOptionsOnly {
         OPT_LAYER_TIMEOUT = 1002,
-        OPT_HD_TERMINAL = 1003,
     };
 
     static struct option long_options[] = {
-        { "dimension",          required_argument, NULL, 'D'},
         { "daemon",             no_argument,       NULL, 'd'},
         { "layer-timeout",      required_argument, NULL,  OPT_LAYER_TIMEOUT },
         { 0,                    0,                 0,    0  },
     };
 
     int opt;
-    while ((opt = getopt_long(argc, argv, "I:d", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "I:du:", long_options, NULL)) != -1) {
         switch (opt) {
         case 'd':
             as_daemon = true;
             break;
         case OPT_LAYER_TIMEOUT:
             layer_timeout = atoi(optarg);
+            break;
+        case 'u':
+            udp_packet_size = atoi(optarg);
             break;
         default:
             return usage(argv[0]);
@@ -75,8 +84,13 @@ int main(int argc, char *argv[]) {
     if (layer_timeout < 1) {
         layer_timeout = 1;
     }
+    if (udp_packet_size < 0 || udp_packet_size > kMaxUDPPacketSize) {
+        fprintf(stderr, "-u %d is outside usable packet size of 0..%d\n",
+                udp_packet_size, kMaxUDPPacketSize);
+        return usage(argv[0]);
+    }
 
-    FlaschenTaschen *display = new BJKPixelPusher();
+    FlaschenTaschen *display = new BJKPixelPusher(udp_packet_size);
 
     // Start all the services and report problems (such as sockets already
     // bound to) before we become a daemon

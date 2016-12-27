@@ -16,7 +16,7 @@
 
 #include <assert.h>
 
-// =========================================================================
+// =======  Hardcoded configuration ============================================
 // BJK, these are just assumptions by me. Adapt to your set-up and make sure
 // the mapping below in SetPixel() works.
 // Hostnames or IP addresses need to be hardcoded.
@@ -30,18 +30,13 @@ static const char *kPixelPusherHost[kPixelPusherCount] = {
     "192.168.1.109",
 };
 
-// Max packet size can be up to 64k with UDP, however, the physical pixel
-// pusher has some limit much lower than that due to lower memory.
-// Not sure what it is, might be worthwhile to increase until it stops working.
-static const int kMaxPacketSize = 1460;
+// =============================================================================
 
-// =========================================================================
-
-BJKPixelPusher::BJKPixelPusher() {
+BJKPixelPusher::BJKPixelPusher(int max_udp_packet_size) {
     for (int i = 0; i < kPixelPusherCount; ++i) {
         clients_.push_back(
             new PixelPusherClient(kStripLen, kStripsPerPP,
-                                  kPixelPusherHost[i], kMaxPacketSize));
+                                  kPixelPusherHost[i], max_udp_packet_size));
     }
 }
 

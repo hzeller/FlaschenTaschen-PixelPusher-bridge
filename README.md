@@ -17,10 +17,25 @@ in [bjk-pixel-pusher.cc](./bjk-pixel-pusher.cc) to set the
 IP-addresses/hostnames of the pixel pushers, and possibly adapt the
 SetPixel() to properly reflect the mapping.
 
+#### Tweaking
+Due to limited memory and IP fragment re-assembly, Jas' physical PixelPusher
+has some relatively small limit on the UDP size, not sure what it is.
+Right now, we conservatively assume 1460 bytes.
+
+It should work fine, but that requires four UDP packets per update of 240x8.
+Might be interesting to tweak the `-u` parameter to see if the PP can accept
+larger packets.
+A size &gt;= 5772 would be ideal, because then we can get 8 rows with 240 LEDs
+out at once.
+Note, there is also a `stripsperpacket` configuration in the
+PixelPusher `pixel.rc` configuration file, so that might need to be modified
+alongside to 8.
+
 ### Operation
 ```
 usage: ./ft-server [options]
 Options:
+        -u <udp-size>        : Maximum UDP to PixelPusher. Default 1460.
         -d                   : Become daemon
         --layer-timeout <sec>: Layer timeout: clearing after non-activity (Default: 15)
 ```

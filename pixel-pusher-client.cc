@@ -14,7 +14,7 @@
 
 #include "led-flaschen-taschen.h"
 
-#include <assert.h>
+#include <stdlib.h>
 #include <netdb.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -58,7 +58,7 @@ PixelPusherClient::PixelPusherClient(int strip_len, int strips,
       // Each row is one byte longer, because we use the first byte to
       // indicate the strip-index which we use in the
       row_size_(1 + sizeof(Color) * width_),
-      rows_per_packet_(max_transmit_bytes / row_size_),
+      rows_per_packet_((max_transmit_bytes - 4) / row_size_),
       pixel_buffer_(new char[row_size_ * height_]),
       sequence_number_(0) {
     // Prepare the pixel index at the beginning of each row
@@ -68,12 +68,15 @@ PixelPusherClient::PixelPusherClient(int strip_len, int strips,
     }
     if (rows_per_packet_ == 0) {
         fprintf(stderr, "Doh', can't even send a single row per packet ("
-                "one row=%d bytes, but max packet-size=%d!\n",
+                "one row=%d bytes, but max packet-size=%d!)\n",
                 (int)row_size_, max_transmit_bytes);
-        assert(0);
+        abort();
     }
-    fprintf(stderr, "PP %s: %dx%d; row-bytes = %d\n",
-            pp_host, width_, height_, (int)row_size_);
+    int packets_needed = (height_ + rows_per_packet_ - 1) / rows_per_packet_;
+    fprintf(stderr, "PP %s: %dx%d; %d UDP packets per frame "
+            "(packet allows for max %d rows @ %d bytes/row)\n",
+            pp_host, width_, height_, packets_needed, rows_per_packet_,
+            (int)row_size_);
 }
 
 PixelPusherClient::~PixelPusherClient() {
