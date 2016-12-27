@@ -17,20 +17,6 @@ in [bjk-pixel-pusher.cc](./bjk-pixel-pusher.cc) to set the
 IP-addresses/hostnames of the pixel pushers, and possibly adapt the
 SetPixel() to properly reflect the mapping.
 
-#### Tweaking
-Due to limited memory and IP fragment re-assembly, Jas' physical PixelPusher
-has some relatively small limit on the UDP size, not sure what it is.
-Right now, we conservatively assume 1460 bytes.
-
-It should work fine, but that requires four UDP packets per update of 240x8.
-Might be interesting to tweak the `-u` parameter to see if the PP can accept
-larger packets.
-A size &gt;= 5772 would be ideal, because then we can get 8 rows with 240 LEDs
-out at once.
-Note, there is also a `stripsperpacket` configuration in the
-PixelPusher `pixel.rc` configuration file, so that might need to be modified
-alongside to 8.
-
 ### Operation
 ```
 usage: ./ft-server [options]
@@ -54,14 +40,35 @@ bridge host:
   cd flaschen-taschen/client
   make send-text send-image send-video
   ./send-image -h <ft-bridge-host> -g120x48 my-animated.gif
-  ./send-text  -h <ft-bridge-host> -g120x48 -f path/to/font.bdf "Hello world"
+  ./send-text  -h <ft-bridge-host> -g120x48 -l15 -cffff00 -o0000ff -f path/to/font.bdf "Hello world"
 ```
 
 Also all these nice demos by Carl: https://github.com/cgorringe/ft-demos
-(instead of `-h <bridge-host>`, often it is more convenient to set the environment
-variable `FT_DISPLAY=<bridge-host>`)
 
-Or, using the latest [vlc compiled from their git](https://wiki.videolan.org/UnixCompile/), to show videos:
+Instead of `-h <bridge-host>`, often it is more convenient to set the environment
+variable `export FT_DISPLAY=<bridge-host>`.
+
+Other tools also started to speak FlaschenTaschen. The latest
+[vlc compiled from git](https://wiki.videolan.org/UnixCompile/),
+can play videos via FlaschenTaschen:
+
 ```
-vlc --vout flaschen --flaschen-display=<ft-bridge-host> --flaschen-width=120 --flaschen-height=48 <filename or youtube url>
+vlc --vout flaschen --flaschen-display=<ft-bridge-host> \
+     --flaschen-width=120 --flaschen-height=48 <filename or youtube url>
 ```
+
+#### Tweaking
+Due to limited memory and IP fragment re-assembly, Jas' physical PixelPusher
+has some relatively small limit on the UDP size, not sure what it is.
+Right now, we conservatively assume 1460 bytes.
+
+It should work fine, but that requires four UDP packets per update of 240x8.
+Might be interesting to tweak the `-u` parameter to see if the PP can accept
+larger packets.
+A size &gt;= 5772 would be ideal, because then we can get 8 rows with 240 LEDs
+out at once.
+Note, there is also a `stripsperpacket` configuration in the
+PixelPusher `pixel.rc` configuration file, so that might need to be modified
+alongside to 8.
+
+Don't worry about tweaking if there is no lagging issue.
