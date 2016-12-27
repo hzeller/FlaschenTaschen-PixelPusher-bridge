@@ -1,14 +1,16 @@
 FlaschenTaschen -&gt; PixelPusher Bridge
 ========================================
 
-(Unless you are bjk or patrickod at the 33C3, this is probably too specific.
+(Unless you are bjk or patrickod at the [33C3], this is probably too specific.
 Nothing to see here in that case).
 
-A bridge that receives FlaschenTaschen protocol and sends it to a PixelPusher
+A bridge that receives [FlaschenTaschen][] [protocol][FT-protocol] and sends it to a [PixelPusher]
 installation.
 
 First step: _super simple_, does _not_ use the PP discovery protocol, just
-assumes hard-coded IP addresses and sizes of connected PixelPushers.
+assumes hard-coded IP addresses and sizes of connected PixelPushers. So this is
+not a complete PixelPusher client implementation, just minimal enough to make it
+work.
 
 ### Configuration needed
 
@@ -26,7 +28,8 @@ Options:
         --layer-timeout <sec>: Layer timeout: clearing after non-activity (Default: 15)
 ```
 
-This can run as any use, does not need to be root.
+This only listens on port 1337 and sends out UDP packets so can run as any user,
+does not need to be root.
 
 ### Clients
 
@@ -72,3 +75,8 @@ PixelPusher `pixel.rc` configuration file, so that might need to be modified
 alongside to 8.
 
 Don't worry about tweaking if there is no lagging issue.
+
+[PixelPusher]: http://www.heroicrobotics.com/products/pixelpusher
+[FlaschenTaschen]: https://github.com/hzeller/flaschen-taschen
+[FT-protocol]: https://github.com/hzeller/flaschen-taschen/blob/master/doc/protocols.md
+[33C3]: https://events.ccc.de/tag/33c3/
