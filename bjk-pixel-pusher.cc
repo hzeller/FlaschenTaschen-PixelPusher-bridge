@@ -67,7 +67,7 @@ void BJKPixelPusher::SetPixel(int x, int y, const Color &col) {
 
     int strip = x / kZigZagCount;
     int strip_offset = x % kZigZagCount * height();
-    int strip_pos = ((x + pp_index) % 2 == 0) ? y : height() - 1 - y; // Zigzag
+    int strip_pos = ((x + strip) % 2 == 0) ? y : height() - 1 - y; // Zigzag
     clients_[pp_index]->SetPixel(strip_offset + strip_pos, strip, col);
 }
 
