@@ -89,24 +89,28 @@ void PixelPusherClient::SetPixel(int x, int y, const Color &col) {
     row[x] = col;
 }
 
-void PixelPusherClient::Send() {
-    if (socket_ < 0) return;
-    size_t remaining = height_ * row_size_;
-    char *pixel_pos = pixel_buffer_;
+
+bool PixelPusherClient::SendPacket(int index) {
+    if (socket_ < 0) return false;
+    const size_t block_size = rows_per_packet_ * row_size_;
+    const size_t start = index * block_size;
+    const size_t end = height_ * row_size_;
+    if (start >= end) return false;
 
     // Each packet has a sequence number in the beginning, but our pixel
     // buffer if contiguous. So we stuff it in front atomically with writev().
     iovec parts[2];
     parts[0].iov_base = &sequence_number_;
     parts[0].iov_len = sizeof(sequence_number_);
-    while (remaining > 0) {
-        parts[1].iov_base = pixel_pos;
-        parts[1].iov_len = std::min(remaining, rows_per_packet_ * row_size_);
+    parts[1].iov_base = pixel_buffer_ + start;
+    parts[1].iov_len = std::min(end - start, block_size);
+    writev(socket_, parts, 2);
 
-        writev(socket_, parts, 2);
+    sequence_number_++;
+    return (index + 1) * block_size < end;
+}
 
-        pixel_pos += parts[1].iov_len;
-        remaining -= parts[1].iov_len;
-        sequence_number_++;
-    }
+void PixelPusherClient::Send() {
+    for (int i = 0; SendPacket(i); ++i)
+        ;
 }

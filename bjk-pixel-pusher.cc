@@ -15,6 +15,7 @@
 #include "led-flaschen-taschen.h"
 
 #include <assert.h>
+#include <unistd.h>
 
 // =======  Hardcoded configuration ============================================
 // BJK, these are just assumptions by me. Adapt to your set-up and make sure
@@ -66,12 +67,17 @@ void BJKPixelPusher::SetPixel(int x, int y, const Color &col) {
 
     int strip = x / kZigZagCount;
     int strip_offset = x % kZigZagCount * height();
-    int strip_pos = (x % 2 == 0) ? y : height() - 1 - y; // Zigzag
+    int strip_pos = ((x + pp_index) % 2 == 0) ? y : height() - 1 - y; // Zigzag
     clients_[pp_index]->SetPixel(strip_offset + strip_pos, strip, col);
 }
 
 void BJKPixelPusher::Send() {
-    for (size_t i = 0; i < clients_.size(); ++i) {
-        clients_[i]->Send();
+    bool need_more_packets = true;
+    for (int packet = 0; need_more_packets; ++packet) {
+        need_more_packets = false;
+        for (size_t i = 0; i < clients_.size(); ++i) {
+            need_more_packets |= clients_[i]->SendPacket(packet);
+        }
+        usleep(3000);  // PixelPushers need some time to digest
     }
 }

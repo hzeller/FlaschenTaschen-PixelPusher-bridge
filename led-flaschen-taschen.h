@@ -41,6 +41,10 @@ public:
     virtual void SetPixel(int x, int y, const Color &col);
     virtual void Send();
 
+    // Each Send() is multiple packets. Send the selected packet.
+    // Return 'false' if there is no packet left to send.
+    bool SendPacket(int index);
+
 private:
     const int width_;
     const int height_;
