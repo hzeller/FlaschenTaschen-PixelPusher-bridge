@@ -7,6 +7,8 @@ Nothing to see here in that case).
 A bridge that receives [FlaschenTaschen][] [protocol][FT-protocol] and sends it to a [PixelPusher]
 installation.
 
+![Setup at 33C3](./img/ft-on-pp.jpg)
+
 First step: _super simple_, does _not_ use the PP discovery protocol, just
 assumes hard-coded IP addresses and sizes of connected PixelPushers. So this is
 not a complete PixelPusher client implementation, just minimal enough to make it
