@@ -22,6 +22,9 @@
 #include <sys/uio.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <math.h>
+
+#define PIXEL_PUSHER_BRIGHTNESS 100  // something between 1 and 100
 
 // Either with hostname or IP address. Assuming port 5078.
 static int OpenPPSocket(const char *host) {
@@ -83,10 +86,38 @@ PixelPusherClient::~PixelPusherClient() {
     delete [] pixel_buffer_;
 }
 
+static int kBitPlanes = 8;
+
+// Do CIE1931 luminance correction and scale to output bitplanes
+static uint16_t luminance_cie1931(uint8_t c, uint8_t brightness) {
+  float out_factor = ((1 << kBitPlanes) - 1);
+  float v = (float) c * brightness / 255.0;
+  return out_factor * ((v <= 8) ? v / 902.3 : pow((v + 16) / 116.0, 3));
+}
+
+struct ColorLookup {
+  uint16_t color[256];
+};
+static ColorLookup *CreateLuminanceCIE1931LookupTable() {
+  ColorLookup *for_brightness = new ColorLookup[100];
+  for (int c = 0; c < 256; ++c)
+    for (int b = 0; b < 100; ++b)
+      for_brightness[b].color[c] = luminance_cie1931(c, b + 1);
+
+  return for_brightness;
+}
+
+static inline Color CIEMapColor(uint8_t brightness, const Color& col) {
+    static ColorLookup *luminance_lookup = CreateLuminanceCIE1931LookupTable();
+    return Color(luminance_lookup[brightness - 1].color[col.r],
+                 luminance_lookup[brightness - 1].color[col.g],
+                 luminance_lookup[brightness - 1].color[col.b]);
+}
+
 void PixelPusherClient::SetPixel(int x, int y, const Color &col) {
     if (x < 0 || x >= width_ || y < 0 || y >= height_) return;
     Color *row = (Color*) (pixel_buffer_ + y*row_size_ + 1);
-    row[x] = col;
+    row[x] = CIEMapColor(PIXEL_PUSHER_BRIGHTNESS, col);
 }
 
 
