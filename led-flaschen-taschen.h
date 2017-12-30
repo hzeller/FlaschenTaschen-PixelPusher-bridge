@@ -32,7 +32,7 @@ public:
     // "pp_host" is the name of the pixel pusher installation, either hostname
     // or IP address. Data will be send to port 5078.
     PixelPusherClient(int strip_len, int strips,
-                      const char *pp_host,
+                      const char *pp_host, const char *pp_port,
                       int max_transmit_bytes, int brightness);
     virtual ~PixelPusherClient();
 

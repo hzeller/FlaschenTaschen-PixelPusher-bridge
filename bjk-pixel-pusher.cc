@@ -21,10 +21,12 @@
 // BJK, these are just assumptions by me. Adapt to your set-up and make sure
 // the mapping below in SetPixel() works.
 // Hostnames or IP addresses need to be hardcoded.
-static const int kPixelPusherCount = 3;
-static const int kStripsPerPP      = 8;
-static const int kStripLen         = 240;
-static const int kZigZagCount      = 5;
+static const int kPixelPusherCount   = 3;
+static const int kStripsPerPP        = 8;
+static const int kStripLen           = 240;
+static const int kZigZagCount        = 5;
+static const char *kPixelPusherPort = "9897";
+
 static const char *kPixelPusherHost[kPixelPusherCount] = {
     "192.168.1.107",
     "192.168.1.108",
@@ -37,7 +39,7 @@ BJKPixelPusher::BJKPixelPusher(int max_udp_packet_size, int brightness) {
     for (int i = 0; i < kPixelPusherCount; ++i) {
         clients_.push_back(
             new PixelPusherClient(kStripLen, kStripsPerPP,
-                                  kPixelPusherHost[i],
+                                  kPixelPusherHost[i], kPixelPusherPort,
                                   max_udp_packet_size, brightness));
     }
 }

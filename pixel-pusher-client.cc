@@ -24,15 +24,15 @@
 #include <stdio.h>
 #include <math.h>
 
-// Either with hostname or IP address. Assuming port 5078.
-static int OpenPPSocket(const char *host) {
+// Either with hostname or IP address and port.
+static int OpenPPSocket(const char *host, const char *port) {
     struct addrinfo addr_hints = {0};
     addr_hints.ai_family = AF_INET;
     addr_hints.ai_socktype = SOCK_DGRAM;
 
     struct addrinfo *addr_result = NULL;
     int rc;
-    if ((rc = getaddrinfo(host, "5078", &addr_hints, &addr_result)) != 0) {
+    if ((rc = getaddrinfo(host, port, &addr_hints, &addr_result)) != 0) {
         fprintf(stderr, "Resolving '%s': %s\n", host, gai_strerror(rc));
         return -1;
     }
@@ -54,9 +54,10 @@ static int OpenPPSocket(const char *host) {
 
 PixelPusherClient::PixelPusherClient(int strip_len, int strips,
                                      const char *pp_host,
+                                     const char *pp_port,
                                      int max_transmit_bytes, int brightness)
     : width_(strip_len), height_(strips),
-      socket_(OpenPPSocket(pp_host)),
+      socket_(OpenPPSocket(pp_host, pp_port)),
       // Each row is one byte longer, because we use the first byte to
       // indicate the strip-index which we use in the
       row_size_(1 + sizeof(Color) * width_),
