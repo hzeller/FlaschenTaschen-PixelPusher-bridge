@@ -28,9 +28,9 @@ static const int kZigZagCount        = 5;
 static const char *kPixelPusherPort = "9897";
 
 static const char *kPixelPusherHost[kPixelPusherCount] = {
-    "192.168.1.107",
-    "192.168.1.108",
-    "192.168.1.109",
+    "192.168.88.20",
+    "192.168.88.21",
+    "192.168.88.22",
 };
 
 // =============================================================================
