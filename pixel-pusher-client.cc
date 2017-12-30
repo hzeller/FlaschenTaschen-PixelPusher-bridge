@@ -62,7 +62,9 @@ PixelPusherClient::PixelPusherClient(int strip_len, int strips,
       // indicate the strip-index which we use in the
       row_size_(1 + sizeof(Color) * width_),
       rows_per_packet_((max_transmit_bytes - 4) / row_size_),
+      packets_needed_((height_ + rows_per_packet_ - 1) / rows_per_packet_),
       brightness_percent_(brightness),
+      block_dirty_(new bool[packets_needed_]),
       pixel_buffer_(new char[row_size_ * height_]),
       sequence_number_(0) {
     // Prepare the pixel index at the beginning of each row
@@ -70,20 +72,21 @@ PixelPusherClient::PixelPusherClient(int strip_len, int strips,
     for (uint8_t i = 0; i < height_; ++i) {
         pixel_buffer_[i * row_size_] = i;
     }
+    ResetDirtyFlags();
     if (rows_per_packet_ == 0) {
         fprintf(stderr, "Doh', can't even send a single row per packet ("
                 "one row=%d bytes, but max packet-size=%d!)\n",
                 (int)row_size_, max_transmit_bytes);
         abort();
     }
-    int packets_needed = (height_ + rows_per_packet_ - 1) / rows_per_packet_;
-    fprintf(stderr, "PP %s: %dx%d; %d UDP packets per frame "
-            "(packet allows for max %d rows @ %d bytes/row)\n",
-            pp_host, width_, height_, packets_needed, rows_per_packet_,
+    fprintf(stderr, "PP %s: %dx%d; %d UDP packets/frame "
+            "(packet contains %d rows @ %d bytes/row)\n",
+            pp_host, width_, height_, packets_needed_, rows_per_packet_,
             (int)row_size_);
 }
 
 PixelPusherClient::~PixelPusherClient() {
+    delete [] block_dirty_;
     delete [] pixel_buffer_;
 }
 
@@ -115,34 +118,48 @@ static inline Color CIEMapColor(uint8_t brightness, const Color& col) {
                  luminance_lookup[brightness - 1].color[col.b]);
 }
 
+void PixelPusherClient::ResetDirtyFlags() {
+    for (int i = 0; i < packets_needed_; ++i) block_dirty_[i] = false;
+}
+
 void PixelPusherClient::SetPixel(int x, int y, const Color &col) {
     if (x < 0 || x >= width_ || y < 0 || y >= height_) return;
     Color *row = (Color*) (pixel_buffer_ + y*row_size_ + 1);
-    row[x] = CIEMapColor(brightness_percent_, col);
+    Color new_color = CIEMapColor(brightness_percent_, col);
+    const int packet = y / rows_per_packet_;
+    block_dirty_[packet] |= (row[x].r != new_color.r ||
+                             row[x].g != new_color.g ||
+                             row[x].b != new_color.b);
+    row[x] = new_color;
 }
 
 
-bool PixelPusherClient::SendPacket(int index) {
+bool PixelPusherClient::SendPacket(int packet_index) {
     if (socket_ < 0) return false;
     const size_t block_size = rows_per_packet_ * row_size_;
-    const size_t start = index * block_size;
+    const size_t start = packet_index * block_size;
     const size_t end = height_ * row_size_;
     if (start >= end) return false;
 
-    // Each packet has a sequence number in the beginning, but our pixel
-    // buffer if contiguous. So we stuff it in front atomically with writev().
-    iovec parts[2];
-    parts[0].iov_base = &sequence_number_;
-    parts[0].iov_len = sizeof(sequence_number_);
-    parts[1].iov_base = pixel_buffer_ + start;
-    parts[1].iov_len = std::min(end - start, block_size);
-    writev(socket_, parts, 2);
+    if (block_dirty_[packet_index]) {
+        // Each packet has a sequence number in the beginning, but our pixel
+        // buffer if contiguous.
+        // So we stuff it in front atomically with writev().
+        iovec parts[2];
+        parts[0].iov_base = &sequence_number_;
+        parts[0].iov_len = sizeof(sequence_number_);
+        parts[1].iov_base = pixel_buffer_ + start;
+        parts[1].iov_len = std::min(end - start, block_size);
+        writev(socket_, parts, 2);
 
-    sequence_number_++;
-    return (index + 1) * block_size < end;
+        sequence_number_++;
+    }
+
+    return (packet_index + 1) * block_size < end;
 }
 
 void PixelPusherClient::Send() {
     for (int i = 0; SendPacket(i); ++i)
         ;
+    ResetDirtyFlags();
 }

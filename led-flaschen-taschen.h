@@ -47,6 +47,8 @@ public:
     bool SendPacket(int index);
 
 private:
+    void ResetDirtyFlags();
+
     const int width_;
     const int height_;
 
@@ -54,8 +56,11 @@ private:
 
     const size_t row_size_;
     const int rows_per_packet_;
+    const int packets_needed_;
+
     const int brightness_percent_;
 
+    bool *block_dirty_;
     char *pixel_buffer_;
     uint32_t sequence_number_;
 };
