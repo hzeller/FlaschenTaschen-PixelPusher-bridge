@@ -32,7 +32,8 @@ public:
     // "pp_host" is the name of the pixel pusher installation, either hostname
     // or IP address. Data will be send to port 5078.
     PixelPusherClient(int strip_len, int strips,
-                      const char *pp_host, int max_transmit_bytes);
+                      const char *pp_host,
+                      int max_transmit_bytes, int brightness);
     virtual ~PixelPusherClient();
 
     virtual int width() const { return width_; }
@@ -53,6 +54,7 @@ private:
 
     const size_t row_size_;
     const int rows_per_packet_;
+    const int brightness_percent_;
 
     char *pixel_buffer_;
     uint32_t sequence_number_;
@@ -60,7 +62,7 @@ private:
 
 class BJKPixelPusher : public FlaschenTaschen {
 public:
-    BJKPixelPusher(int udp_packet_size);
+    BJKPixelPusher(int udp_packet_size, int brightness);
     virtual ~BJKPixelPusher();
 
     virtual int width() const;

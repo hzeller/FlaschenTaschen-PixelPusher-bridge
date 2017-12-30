@@ -33,11 +33,12 @@ static const char *kPixelPusherHost[kPixelPusherCount] = {
 
 // =============================================================================
 
-BJKPixelPusher::BJKPixelPusher(int max_udp_packet_size) {
+BJKPixelPusher::BJKPixelPusher(int max_udp_packet_size, int brightness) {
     for (int i = 0; i < kPixelPusherCount; ++i) {
         clients_.push_back(
             new PixelPusherClient(kStripLen, kStripsPerPP,
-                                  kPixelPusherHost[i], max_udp_packet_size));
+                                  kPixelPusherHost[i],
+                                  max_udp_packet_size, brightness));
     }
 }
 

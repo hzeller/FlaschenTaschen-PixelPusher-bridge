@@ -24,8 +24,6 @@
 #include <stdio.h>
 #include <math.h>
 
-#define PIXEL_PUSHER_BRIGHTNESS 100  // something between 1 and 100
-
 // Either with hostname or IP address. Assuming port 5078.
 static int OpenPPSocket(const char *host) {
     struct addrinfo addr_hints = {0};
@@ -55,13 +53,15 @@ static int OpenPPSocket(const char *host) {
 }
 
 PixelPusherClient::PixelPusherClient(int strip_len, int strips,
-                                     const char *pp_host, int max_transmit_bytes)
+                                     const char *pp_host,
+                                     int max_transmit_bytes, int brightness)
     : width_(strip_len), height_(strips),
       socket_(OpenPPSocket(pp_host)),
       // Each row is one byte longer, because we use the first byte to
       // indicate the strip-index which we use in the
       row_size_(1 + sizeof(Color) * width_),
       rows_per_packet_((max_transmit_bytes - 4) / row_size_),
+      brightness_percent_(brightness),
       pixel_buffer_(new char[row_size_ * height_]),
       sequence_number_(0) {
     // Prepare the pixel index at the beginning of each row
@@ -117,7 +117,7 @@ static inline Color CIEMapColor(uint8_t brightness, const Color& col) {
 void PixelPusherClient::SetPixel(int x, int y, const Color &col) {
     if (x < 0 || x >= width_ || y < 0 || y >= height_) return;
     Color *row = (Color*) (pixel_buffer_ + y*row_size_ + 1);
-    row[x] = CIEMapColor(PIXEL_PUSHER_BRIGHTNESS, col);
+    row[x] = CIEMapColor(brightness_percent_, col);
 }
 
 

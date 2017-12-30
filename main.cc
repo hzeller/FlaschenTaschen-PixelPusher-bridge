@@ -44,6 +44,7 @@ static int usage(const char *progname) {
     fprintf(stderr, "usage: %s [options]\n", progname);
     fprintf(stderr, "Options:\n"
             "\t-u <udp-size>        : Maximum UDP to PixelPusher. Default %d.\n"
+            "\t-b <brightness%%>     : Percent brightness. Default: 100\n"
             "\t-d                   : Become daemon\n"
             "\t--layer-timeout <sec>: Layer timeout: clearing after non-activity (Default: 15)\n", kDefaultPacketSize);
     return 1;
@@ -53,6 +54,7 @@ int main(int argc, char *argv[]) {
     int layer_timeout = 15;
     bool as_daemon = false;
     int udp_packet_size = kDefaultPacketSize;
+    int brightness = 100;
 
     enum LongOptionsOnly {
         OPT_LAYER_TIMEOUT = 1002,
@@ -65,7 +67,7 @@ int main(int argc, char *argv[]) {
     };
 
     int opt;
-    while ((opt = getopt_long(argc, argv, "I:du:", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "I:du:b:", long_options, NULL)) != -1) {
         switch (opt) {
         case 'd':
             as_daemon = true;
@@ -76,6 +78,9 @@ int main(int argc, char *argv[]) {
         case 'u':
             udp_packet_size = atoi(optarg);
             break;
+        case 'b':
+            brightness = atoi(optarg);
+            break;
         default:
             return usage(argv[0]);
         }
@@ -84,13 +89,16 @@ int main(int argc, char *argv[]) {
     if (layer_timeout < 1) {
         layer_timeout = 1;
     }
+    if (brightness < 0) brightness = 0;
+    if (brightness > 100) brightness = 100;
+
     if (udp_packet_size < 0 || udp_packet_size > kMaxUDPPacketSize) {
         fprintf(stderr, "-u %d is outside usable packet size of 0..%d\n",
                 udp_packet_size, kMaxUDPPacketSize);
         return usage(argv[0]);
     }
 
-    FlaschenTaschen *display = new BJKPixelPusher(udp_packet_size);
+    FlaschenTaschen *display = new BJKPixelPusher(udp_packet_size, brightness);
 
     // Start all the services and report problems (such as sockets already
     // bound to) before we become a daemon
