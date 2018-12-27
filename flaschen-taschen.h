@@ -19,7 +19,7 @@
 #include <stdint.h>
 
 struct Color {
-    Color() {}
+    Color() = default;
     Color(int rr, int gg, int bb) : r(rr), g(gg), b(bb){}
 
     bool is_black() const { return r == 0 && g == 0 && b == 0; }
